@@ -44,7 +44,7 @@ ENV HBASE_CONF_DIR=$HBASE_HOME/conf
 ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin:$SPARK_HOME/bin
 
 RUN dnf install -y --allowerasing \
-        java-11-openjdk-headless \
+        java-11-openjdk-headless java-11-openjdk-devel \
         openssh-server openssh-clients \
         nmap-ncat nano \
         which \

@@ -58,6 +58,9 @@ start_master() {
     echo "[INFO] Starting HDFS NameNode..."
     $HADOOP_HOME/bin/hdfs --daemon start namenode
 
+    echo "[INFO] Starting SecondaryNameNode..."
+    $HADOOP_HOME/bin/hdfs --daemon start secondarynamenode
+
     echo "[INFO] Starting YARN ResourceManager..."
     $HADOOP_HOME/bin/yarn --daemon start resourcemanager
 
@@ -116,6 +119,7 @@ cleanup() {
         $HADOOP_HOME/bin/mapred --daemon stop historyserver 2>/dev/null || true
         $HADOOP_HOME/bin/yarn --daemon stop resourcemanager 2>/dev/null || true
         $HADOOP_HOME/bin/hdfs --daemon stop namenode 2>/dev/null || true
+        $HADOOP_HOME/bin/hdfs --daemon stop secondarynamenode 2>/dev/null || true
         $ZK_HOME/bin/zkServer.sh stop 2>/dev/null || true
     else
         $HBASE_HOME/bin/hbase-daemon.sh stop regionserver 2>/dev/null || true

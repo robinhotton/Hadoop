@@ -45,13 +45,18 @@ docker exec -it hadoop-master bash
 jps
 
 # 3. Vérifier les scripts de TP (montés via le volume ./tp:/home/tp)
-ls -la /home/tp/
+ls -al /home/tp/
+cd /home/tp/
 
-# 4. Préparer les données d'entrée
+# 4. créer les dossiers hdfs
+hdfs dfs -mkdir -p /input
+hdfs dfs -mkdir -p /output
+
+# 5. Préparer les données d'entrée
 echo "hello world hello hadoop hello yarn hello hbase" > data.txt
 hdfs dfs -put data.txt /input/data.txt
 
-# 5. Lancer un job MapReduce (wordcount) via Hadoop Streaming
+# 6. Lancer un job MapReduce (wordcount) via Hadoop Streaming
 hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
   -files /home/tp/wordcount_mapper.py,/home/tp/wordcount_reducer.py \
   -mapper "python3 wordcount_mapper.py" \
@@ -59,17 +64,12 @@ hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
   -input /input/data.txt \
   -output /output/wordcount
 
-# 5. Consulter le résultat
+# 7. Consulter le résultat
 hdfs dfs -cat /output/wordcount/*
 
-# 6. Supprimer le résultat avant de relancer
+# 8. Supprimer le résultat avant de relancer
 hdfs dfs -rm -r /output/wordcount
 ```
-
-> **Note sur `-files` :** `-files` distribue automatiquement les scripts sur chaque NodeManager. Dans notre cluster, les scripts sont déjà présents via le volume `./tp:/home/tp`, donc `-files` est redondant mais ne gêne pas. Sans volume partagé (cluster hétérogène), `-files` est obligatoire.
-
-> Les services démarrent automatiquement via `bootstrap.sh`.  
-> Utilisez `jps` pour vérifier les processus attendus (voir [Services](#services) ci-dessous).
 
 ## Services
 
@@ -78,7 +78,7 @@ hdfs dfs -rm -r /output/wordcount
 | Processus | Rôle | Port |
 |-----------|------|------|
 | `NameNode` | Gestionnaire HDFS (métadonnées) | 9870 (UI), 9000 (RPC) |
-| `SecondaryNameNode` | Checkpoint du NameNode | — |
+| `SecondaryNameNode` | Checkpoint du NameNode | 9868 (UI) |
 | `DataNode` | Stockage HDFS local | — |
 | `ResourceManager` | Ordonnanceur YARN | 8088 (UI) |
 | `NodeManager` | Exécuteur YARN local | 8042 (UI) |
