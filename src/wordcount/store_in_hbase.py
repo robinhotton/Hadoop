@@ -29,12 +29,12 @@ def main():
             continue
         word, count = line.split("\t", 1)
         row_key = word.lower().strip()
-        table.put(row_key.encode(), {f"{COLUMN_FAMILY}:count": count.strip().encode()})
+        count_val = count.strip()
+        table.put(row_key.encode(), {f"{COLUMN_FAMILY}:count": count_val.encode()})
+        print(f"  {row_key} -> {count_val}")
         inserted += 1
 
     if inserted == 0:
-        print("[ERROR] Aucune donnee recue sur stdin. "
-              "Usage: hdfs dfs -cat /output/wordcount/part-* | python3 store_in_hbase.py")
         connection.close()
         sys.exit(1)
 

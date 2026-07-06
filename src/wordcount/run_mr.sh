@@ -8,13 +8,15 @@ INPUT_FILE="$1"
 MAPPER="$2"
 REDUCER="$3"
 OUTPUT_DIR="$4"
+HBASE_SCRIPT="$5"
 
 # Vérification qte arg recu
 if [ $# -lt 4 ]; then
-    echo "Usage: $0 <input_file> <mapper.py> <reducer.py> <output_dir>"
+    echo "Usage: $0 <input_file> <mapper.py> <reducer.py> <output_dir> [hbase_script.py]"
     echo ""
-    echo "Exemple wordcount :"
+    echo "Exemples :"
     echo "  $0 data.txt wordcount_mapper.py wordcount_reducer.py wordcount"
+    echo "  $0 data.txt wordcount_mapper.py wordcount_reducer.py wordcount store_in_hbase.py"
     exit 1
 fi
 
@@ -26,6 +28,11 @@ for f in "$INPUT_FILE" "$MAPPER" "$REDUCER"; do
         exit 1
     fi
 done
+
+if [ -n "$HBASE_SCRIPT" ] && [ ! -f "$HBASE_SCRIPT" ]; then
+    echo "[ERROR] Fichier introuvable : $HBASE_SCRIPT"
+    exit 1
+fi
 
 
 # 2. Créer le dossier input HDFS et copier le fichier
@@ -50,11 +57,12 @@ hadoop jar "$HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar" \
 # 5. Afficher le résultat
 echo ""
 echo "=== Resultat ==="
-hdfs dfs -cat "output/$OUTPUT_DIR/part-*"
-
-# 6. Stocker le résultat dans HBase (wordcount uniquement)
-if [ "$OUTPUT_DIR" = "wordcount" ]; then
-    echo ""
-    echo "=== Insertion dans HBase ==="
-    hdfs dfs -cat "output/$OUTPUT_DIR/part-*" | python3 store_in_hbase.py
+if hdfs dfs -test -e "output/$OUTPUT_DIR/_SUCCESS" 2>/dev/null; then
+    if [ -n "$HBASE_SCRIPT" ]; then
+        hdfs dfs -cat "output/$OUTPUT_DIR/part-*" | python3 "$HBASE_SCRIPT"
+    else
+        hdfs dfs -cat "output/$OUTPUT_DIR/part-*"
+    fi
+else
+    echo "[ERROR] Le job n'a pas produit de sortie (_SUCCESS absent)"
 fi
