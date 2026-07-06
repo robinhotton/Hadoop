@@ -7,20 +7,17 @@ PORT = 9090
 
 def main():
     connection = happybase.Connection(host=HOST, port=PORT)
-    print(f"[OK] Connected to HBase Thrift at {HOST}:{PORT}")
+    print(f"[OK] Connecte a HBase Thrift ({HOST}:{PORT})")
 
     tables = connection.tables()
     print(f"Tables existantes : {[t.decode() for t in tables]}")
 
-    table_name = b"etudiants"
-    if table_name not in tables:
-        connection.create_table(
-            table_name.decode(),
-            {"info": dict(max_versions=1)}
-        )
-        print(f"[OK] Table '{table_name.decode()}' créée")
+    table_name = "etudiants"
+    if table_name.encode() not in connection.tables():
+        connection.create_table(table_name, {"info": dict(max_versions=1)})
+        print(f"[OK] Table '{table_name}' creee")
 
-    table = connection.table(table_name.decode())
+    table = connection.table(table_name)
 
     print("\n--- Insertion de donnees ---")
     table.put(b"row1", {b"info:nom": b"Dupont", b"info:prenom": b"Jean", b"info:age": b"22"})

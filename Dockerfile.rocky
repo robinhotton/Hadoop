@@ -98,6 +98,8 @@ RUN echo "export JAVA_HOME=$JAVA_HOME" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
     echo "export HBASE_THRIFT_OPTS=\"-Xms256m -Xmx256m\"" >> $HBASE_CONF_DIR/hbase-env.sh && \
     chmod +x /opt/scripts/bootstrap.sh
 
+RUN echo "alias clear='printf \"\\033c\"'" >> /etc/bashrc
+
 RUN mkdir -p /var/run/sshd
 
 EXPOSE 9870 8088 8042 16010 2181 9000 9090 9091

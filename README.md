@@ -44,31 +44,13 @@ docker exec -it hadoop-master bash
 # 2. Vérifier que tous les services tournent
 jps
 
-# 3. Vérifier les scripts de TP (montés via le volume ./tp:/home/tp)
-ls -al /home/tp/
-cd /home/tp/
+# 3. Vérifier les scripts de TP (montés via le volume ./src:/home/tp)
+ls -la /home/tp/ /home/tp/wordcount/
 
-# 4. créer les dossiers hdfs
-hdfs dfs -mkdir -p /input
-hdfs dfs -mkdir -p /output
-
-# 5. Préparer les données d'entrée
+# 4. Lancer un MapReduce wordcount via le script générique
+cd /home/tp/wordcount
 echo "hello world hello hadoop hello yarn hello hbase" > data.txt
-hdfs dfs -put data.txt /input/data.txt
-
-# 6. Lancer un job MapReduce (wordcount) via Hadoop Streaming
-hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
-  -files /home/tp/wordcount_mapper.py,/home/tp/wordcount_reducer.py \
-  -mapper "python3 wordcount_mapper.py" \
-  -reducer "python3 wordcount_reducer.py" \
-  -input /input/data.txt \
-  -output /output/wordcount
-
-# 7. Consulter le résultat
-hdfs dfs -cat /output/wordcount/*
-
-# 8. Supprimer le résultat avant de relancer
-hdfs dfs -rm -r /output/wordcount
+./run_mr.sh data.txt wordcount_mapper.py wordcount_reducer.py wordcount
 ```
 
 ## Services
@@ -113,7 +95,7 @@ hdfs dfs -rm -r /output/wordcount
 ### HBase avec happybase
 
 ```bash
-python3 /home/tp/tp_hbase.py
+python3 /home/tp/hbase.py
 ```
 
 ### Power BI
@@ -163,9 +145,13 @@ hadoop-cluster/
 ├── scripts/                # Scripts de démarrage
 │   ├── bootstrap.sh
 │   └── regionservers
-├── tp/                     # Exemples de TP
-│   ├── wordcount_mapper.py
-│   ├── wordcount_reducer.py
+├── src/                     # Scripts des TP
+│   ├── hbase.py              # Exemple HBase (étudiants)
+│   ├── wordcount/
+│   │   ├── wordcount_mapper.py
+│   │   ├── wordcount_reducer.py
+│   │   ├── store_in_hbase.py  # Stocke le résultat MR dans HBase
+│   │   └── run_mr.sh         # Script générique de lancement MR
 │   └── tp_hbase.py
 ├── docs/                   # Documentation
 │   ├── ha-failover.md

@@ -1,0 +1,5 @@
+docker exec -it hadoop-master bash
+=> positionne a la racine du container (pas dans le user ou home)
+
+[root@hadoop-master /]# jps
+bash: jps: command not found

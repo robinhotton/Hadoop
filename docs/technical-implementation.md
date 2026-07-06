@@ -24,7 +24,7 @@
 | `./volumes/datanode1/` | `/data/hdfs/datanode` | Données slave1 |
 | `./volumes/datanode2/` | `/data/hdfs/datanode` | Données slave2 |
 | `./volumes/zookeeper/` | `/data/zookeeper` | Données ZooKeeper |
-| `./tp/` | `/home/tp/` | Scripts TP (partagés) |
+| `./src/` | `/home/tp/` | Scripts TP (partagés) |
 
 ---
 
