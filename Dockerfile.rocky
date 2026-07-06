@@ -100,7 +100,9 @@ RUN echo "export JAVA_HOME=$JAVA_HOME" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
 
 RUN echo "alias clear='printf \"\\033c\"'" >> /etc/bashrc
 
-RUN mkdir -p /var/run/sshd
+RUN mkdir -p /home/src /var/run/sshd
+
+WORKDIR /home/src
 
 EXPOSE 9870 8088 8042 16010 2181 9000 9090 9091
 

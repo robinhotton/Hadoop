@@ -15,8 +15,8 @@ if [ $# -lt 4 ]; then
     echo "Usage: $0 <input_file> <mapper.py> <reducer.py> <output_dir> [hbase_script.py]"
     echo ""
     echo "Exemples :"
-    echo "  $0 data.txt wordcount_mapper.py wordcount_reducer.py wordcount"
-    echo "  $0 data.txt wordcount_mapper.py wordcount_reducer.py wordcount store_in_hbase.py"
+    echo "  $0 words.txt mapper.py reducer.py wordcount"
+    echo "  $0 words.txt mapper.py reducer.py wordcount store_in_hbase.py"
     exit 1
 fi
 
@@ -46,7 +46,7 @@ hdfs dfs -rm -r "output/$OUTPUT_DIR" 2>/dev/null || true
 
 
 # 4. Lancer le job MapReduce
-hadoop jar "$HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar" \
+hadoop jar "$HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-3.3.6.jar" \
     -files "$MAPPER,$REDUCER" \
     -mapper "python3 $(basename "$MAPPER")" \
     -reducer "python3 $(basename "$REDUCER")" \

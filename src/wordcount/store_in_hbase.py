@@ -42,7 +42,7 @@ def main():
 
     print("\n--- Scan de la table ---")
     for key, cols in table.scan():
-        val = cols.get(f"{COLUMN_FAMILY}:count", b"").decode()
+        val = cols.get(f"{COLUMN_FAMILY}:count".encode(), b"").decode()
         print(f"  {key.decode()} : {val}")
 
     connection.close()

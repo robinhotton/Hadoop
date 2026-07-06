@@ -44,11 +44,11 @@ docker exec -it hadoop-master bash
 # 2. Vérifier que tous les services tournent
 jps
 
-# 3. Vérifier les scripts de TP (montés via le volume ./src:/home/tp)
-ls -la /home/tp/ /home/tp/wordcount/
+# 3. Vérifier les scripts de TP (montés via le volume ./src:/home/src)
+ls -la /home/src/ /home/src/wordcount/
 
 # 4. Lancer un MapReduce wordcount via le script générique
-cd /home/tp/wordcount
+cd /home/src/wordcount
 echo "hello world hello hadoop hello yarn hello hbase" > data.txt
 ./run_mr.sh data.txt wordcount_mapper.py wordcount_reducer.py wordcount
 ```
@@ -95,7 +95,7 @@ echo "hello world hello hadoop hello yarn hello hbase" > data.txt
 ### HBase avec happybase
 
 ```bash
-python3 /home/tp/hbase.py
+python3 /home/src/hbase.py
 ```
 
 ### Power BI
