@@ -134,9 +134,6 @@ spark-submit --master yarn --deploy-mode cluster /path/to/script.py
 # Arrêter les conteneurs
 docker compose down
 
-# Arrêter et supprimer les volumes (perte des données HDFS/HBase)
-docker compose down -v
-
 # Rebuild complet
 docker compose build --no-cache
 ```
@@ -173,5 +170,4 @@ hadoop-cluster/
 ├── docs/                   # Documentation
 │   ├── ha-failover.md
 │   └── technical-implementation.md
-└── volumes/                # Données persistantes (gitignored)
 ```

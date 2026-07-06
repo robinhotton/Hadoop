@@ -16,8 +16,6 @@ services:
       - "9090:9090"
       - "9091:9091"
     volumes:
-      - ./volumes/namenode:/data/hdfs/namenode
-      - ./volumes/zookeeper:/data/zookeeper
       - ./tp:/home/tp
     environment:
       - ROLE=master
@@ -39,8 +37,6 @@ services:
     hostname: hadoop-slave1
     ports:
       - "8041:8042"
-    volumes:
-      - ./volumes/datanode1:/data/hdfs/datanode
     environment:
       - ROLE=slave
     depends_on:
@@ -59,8 +55,6 @@ services:
     hostname: hadoop-slave2
     ports:
       - "8042:8042"
-    volumes:
-      - ./volumes/datanode2:/data/hdfs/datanode
     environment:
       - ROLE=slave
     depends_on:
