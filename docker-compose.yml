@@ -1,0 +1,81 @@
+services:
+  master:
+    container_name: hadoop-master
+    build:
+      context: .
+      dockerfile: Dockerfile.rocky
+    image: hadoop-cluster-base:latest
+    hostname: hadoop-master
+    ports:
+      - "9870:9870"
+      - "8088:8088"
+      - "8040:8042"
+      - "16010:16010"
+      - "2181:2181"
+      - "9000:9000"
+      - "9090:9090"
+      - "9091:9091"
+    volumes:
+      - ./volumes/namenode:/data/hdfs/namenode
+      - ./volumes/zookeeper:/data/zookeeper
+      - ./tp:/home/tp
+    environment:
+      - ROLE=master
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/hadoop-master/9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      hadoop-net:
+        ipv4_address: 172.20.0.10
+    mem_limit: 3g
+    cpus: 2
+
+  slave1:
+    container_name: hadoop-slave1
+    image: hadoop-cluster-base:latest
+    hostname: hadoop-slave1
+    ports:
+      - "8041:8042"
+    volumes:
+      - ./volumes/datanode1:/data/hdfs/datanode
+    environment:
+      - ROLE=slave
+    depends_on:
+      master:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      hadoop-net:
+        ipv4_address: 172.20.0.20
+    mem_limit: 1.5g
+    cpus: 1
+
+  slave2:
+    container_name: hadoop-slave2
+    image: hadoop-cluster-base:latest
+    hostname: hadoop-slave2
+    ports:
+      - "8042:8042"
+    volumes:
+      - ./volumes/datanode2:/data/hdfs/datanode
+    environment:
+      - ROLE=slave
+    depends_on:
+      master:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      hadoop-net:
+        ipv4_address: 172.20.0.30
+    mem_limit: 1.5g
+    cpus: 1
+
+networks:
+  hadoop-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

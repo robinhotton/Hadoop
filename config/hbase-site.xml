@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://hadoop-master:9000/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>hadoop-master</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.dataDir</name>
+        <value>/data/zookeeper</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.global.memstore.size</name>
+        <value>0.3</value>
+    </property>
+    <property>
+        <name>hfile.block.cache.size</name>
+        <value>0.3</value>
+    </property>
+    <property>
+        <name>hbase.master.info.port</name>
+        <value>16010</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.info.port</name>
+        <value>16030</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.handler.count</name>
+        <value>3</value>
+    </property>
+    <property>
+        <name>hbase.hregion.max.filesize</name>
+        <value>1073741824</value>
+    </property>
+    <property>
+        <name>hbase.hregion.memstore.flush.size</name>
+        <value>134217728</value>
+    </property>
+    <property>
+        <name>hbase.client.scanner.caching</name>
+        <value>100</value>
+    </property>
+</configuration>

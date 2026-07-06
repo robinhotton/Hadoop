@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>hadoop-master</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.address</name>
+        <value>hadoop-master:8032</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.scheduler.address</name>
+        <value>hadoop-master:8030</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.resource-tracker.address</name>
+        <value>hadoop-master:8031</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.admin.address</name>
+        <value>hadoop-master:8033</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.webapp.address</name>
+        <value>hadoop-master:8088</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.resource.memory-mb</name>
+        <value>1024</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.resource.cpu-vcores</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>yarn.scheduler.minimum-allocation-mb</name>
+        <value>256</value>
+    </property>
+    <property>
+        <name>yarn.scheduler.maximum-allocation-mb</name>
+        <value>1024</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.pmem-check-enabled</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.vmem-check-enabled</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>yarn.log-aggregation-enable</name>
+        <value>true</value>
+    </property>
+</configuration>
