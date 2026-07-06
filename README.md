@@ -25,32 +25,47 @@ Stack Hadoop complète pour l'apprentissage, déployable en local ou sur Proxmox
 # Build de l'image (~5-10 min selon la connexion)
 docker compose build
 
-# Lancement des 3 conteneurs
+# Lancement des 3 conteneurs (froids : SSH uniquement)
 docker compose up -d
 
 # Vérification
 docker compose ps
-
-# Logs en direct
-docker compose logs -f
 ```
 
 ### Premiers pas dans le cluster
 
+Les conteneurs démarrent sans aucun service Hadoop/HBase actif.
+Vous devez lancer les services manuellement depuis le master.
+
 ```bash
 # 1. Accéder au master
-docker exec -it hadoop-master bash
+./bash_hadoop_master.sh
+# ou : docker exec -it hadoop-master bash
 
-# 2. Vérifier que tous les services tournent
+# 2. Lancer HDFS et YARN
+./start_hadoop.sh
+
+# 3. Lancer HBase et Thrift
+./start_hbase.sh
+
+# 4. (optionnel) Lancer l'API REST HBase
+./start_rest.sh
+
+# 5. Vérifier les processus
 jps
 
-# 3. Vérifier les scripts de TP (montés via le volume ./src:/home/src)
-ls -la /home/src/ /home/src/wordcount/
-
-# 4. Lancer un MapReduce wordcount via le script générique
+# 6. Lancer un MapReduce wordcount
 cd /home/src/wordcount
 echo "hello world hello hadoop hello yarn hello hbase" > data.txt
 ./run_mr.sh data.txt wordcount_mapper.py wordcount_reducer.py wordcount
+```
+
+Pour arrêter les services :
+
+```bash
+./stop_rest.sh
+./stop_hbase.sh
+./stop_hadoop.sh
 ```
 
 ## Services
@@ -114,7 +129,8 @@ spark-submit --master yarn --deploy-mode cluster /path/to/script.py
 
 ```bash
 # Arrêter les conteneurs
-docker compose down
+./container_stop.sh
+# ou : docker compose down
 
 # Rebuild complet
 docker compose build --no-cache
@@ -132,19 +148,30 @@ docker compose build --no-cache
 
 ```
 hadoop-cluster/
-├── Dockerfile.rocky        # Image multistage
-├── docker-compose.yml      # Orchestration
-├── config/                 # Fichiers de configuration
+├── Dockerfile.rocky          # Image multistage
+├── docker-compose.yml        # Orchestration
+├── container_start.sh        # Démarre les conteneurs
+├── container_stop.sh         # Arrête les conteneurs
+├── bash_hadoop_master.sh     # Console dans le master
+├── config/                   # Fichiers de configuration
 │   ├── core-site.xml
 │   ├── hdfs-site.xml
 │   ├── mapred-site.xml
 │   ├── yarn-site.xml
 │   ├── hbase-site.xml
 │   ├── zoo.cfg
-│   └── spark-defaults.conf
-├── scripts/                # Scripts de démarrage
-│   ├── bootstrap.sh
-│   └── regionservers
+│   ├── spark-defaults.conf
+│   └── workers
+├── scripts/                  # Scripts copiés dans le conteneur
+│   ├── entrypoint.sh          # Entrypoint (init + heaps JVM)
+│   ├── regionservers          # Liste des RegionServers HBase
+│   └── master/                # Scripts de gestion des services (dans /home/)
+│       ├── start_hadoop.sh
+│       ├── stop_hadoop.sh
+│       ├── start_hbase.sh
+│       ├── stop_hbase.sh
+│       ├── start_rest.sh
+│       └── stop_rest.sh
 ├── src/                     # Scripts des TP
 │   ├── hbase.py              # Exemple HBase (étudiants)
 │   ├── wordcount/

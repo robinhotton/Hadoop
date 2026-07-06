@@ -59,8 +59,10 @@ echo ""
 echo "=== Resultat ==="
 if hdfs dfs -test -e "output/$OUTPUT_DIR/_SUCCESS" 2>/dev/null; then
     if [ -n "$HBASE_SCRIPT" ]; then
+        echo "=== Happybase ==="
         hdfs dfs -cat "output/$OUTPUT_DIR/part-*" | python3 "$HBASE_SCRIPT"
     else
+        echo "=== DFS ==="
         hdfs dfs -cat "output/$OUTPUT_DIR/part-*"
     fi
 else

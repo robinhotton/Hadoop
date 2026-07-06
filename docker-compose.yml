@@ -19,12 +19,6 @@ services:
       - ./src:/home/src
     environment:
       - ROLE=master
-    healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/hadoop-master/9000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
     networks:
       hadoop-net:
         ipv4_address: 172.20.0.10
@@ -41,7 +35,7 @@ services:
       - ROLE=slave
     depends_on:
       master:
-        condition: service_healthy
+        condition: service_started
     restart: on-failure
     networks:
       hadoop-net:
@@ -59,7 +53,7 @@ services:
       - ROLE=slave
     depends_on:
       master:
-        condition: service_healthy
+        condition: service_started
     restart: on-failure
     networks:
       hadoop-net:

@@ -61,17 +61,14 @@ RUN ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa && \
     cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys && \
     chmod 600 /root/.ssh/authorized_keys && \
     ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N '' 2>/dev/null && \
-    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N '' 2>/dev/null && \
-    sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \
-    echo "UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config
+    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N '' 2>/dev/null
 
 COPY --from=builder /opt/hadoop $HADOOP_HOME
 COPY --from=builder /opt/hbase $HBASE_HOME
 COPY --from=builder /opt/zookeeper $ZK_HOME
 COPY --from=builder /opt/spark $SPARK_HOME
 
-RUN mkdir -p /data/hdfs/namenode /data/hdfs/datanode /data/zookeeper /opt/scripts
+RUN mkdir -p /data/hdfs/namenode /data/hdfs/datanode /data/zookeeper /opt/scripts /home/src /var/run/sshd
 
 COPY config/core-site.xml $HADOOP_CONF_DIR/core-site.xml
 COPY config/hdfs-site.xml $HADOOP_CONF_DIR/hdfs-site.xml
@@ -80,30 +77,16 @@ COPY config/yarn-site.xml $HADOOP_CONF_DIR/yarn-site.xml
 COPY config/hbase-site.xml $HBASE_CONF_DIR/hbase-site.xml
 COPY config/zoo.cfg $ZK_HOME/conf/zoo.cfg
 COPY config/spark-defaults.conf $SPARK_HOME/conf/spark-defaults.conf
-COPY scripts/regionservers $HBASE_CONF_DIR/regionservers
-COPY scripts/bootstrap.sh /opt/scripts/bootstrap.sh
+COPY config/datanodes $HADOOP_CONF_DIR/workers
+COPY config/datanodes $HBASE_CONF_DIR/regionservers
+COPY scripts/entrypoint.sh /opt/scripts/entrypoint.sh
+COPY scripts/master/ /home/
 
-RUN echo "export JAVA_HOME=$JAVA_HOME" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export HADOOP_HOME=$HADOOP_HOME" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export HADOOP_CONF_DIR=$HADOOP_CONF_DIR" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export HADOOP_HEAPSIZE=512" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export HDFS_NAMENODE_OPTS=\"-Xms512m -Xmx512m\"" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export HDFS_DATANODE_OPTS=\"-Xms256m -Xmx256m\"" >> $HADOOP_CONF_DIR/hadoop-env.sh && \
-    echo "export YARN_RESOURCEMANAGER_OPTS=\"-Xms512m -Xmx512m\"" >> $HADOOP_CONF_DIR/yarn-env.sh && \
-    echo "export YARN_NODEMANAGER_OPTS=\"-Xms256m -Xmx256m\"" >> $HADOOP_CONF_DIR/yarn-env.sh && \
-    echo "export YARN_HEAPSIZE=512" >> $HADOOP_CONF_DIR/yarn-env.sh && \
-    echo "export HBASE_HEAPSIZE=512" >> $HBASE_CONF_DIR/hbase-env.sh && \
-    echo "export HBASE_MASTER_OPTS=\"-Xms512m -Xmx512m\"" >> $HBASE_CONF_DIR/hbase-env.sh && \
-    echo "export HBASE_REGIONSERVER_OPTS=\"-Xms512m -Xmx512m\"" >> $HBASE_CONF_DIR/hbase-env.sh && \
-    echo "export HBASE_THRIFT_OPTS=\"-Xms256m -Xmx256m\"" >> $HBASE_CONF_DIR/hbase-env.sh && \
-    chmod +x /opt/scripts/bootstrap.sh
+RUN chmod +x /opt/scripts/entrypoint.sh /home/*.sh && \
+    echo "alias clear='printf \"\\033c\"'" >> /etc/bashrc
 
-RUN echo "alias clear='printf \"\\033c\"'" >> /etc/bashrc
-
-RUN mkdir -p /home/src /var/run/sshd
-
-WORKDIR /home/src
+WORKDIR /home
 
 EXPOSE 9870 8088 8042 16010 2181 9000 9090 9091
 
-ENTRYPOINT ["/opt/scripts/bootstrap.sh"]
+ENTRYPOINT ["/opt/scripts/entrypoint.sh"]

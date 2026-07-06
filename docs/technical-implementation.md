@@ -4,11 +4,14 @@
 
 ### Containers
 
-| Hostname | Role | Services |
-|----------|------|----------|
+| Hostname | Role | Services (après démarrage manuel) |
+|----------|------|-----------------------------------|
 | `hadoop-master` (172.20.0.10) | Master | NameNode, ResourceManager, SecondaryNameNode, ZooKeeper, HBase Master, HBase Thrift, HBase REST, HistoryServer, Spark |
 | `hadoop-slave1` (172.20.0.20) | Slave | DataNode, NodeManager, HBase RegionServer |
 | `hadoop-slave2` (172.20.0.30) | Slave | DataNode, NodeManager, HBase RegionServer |
+
+**Note :** Les conteneurs démarrent sans aucun service actif (SSH uniquement).
+Les services se lancent manuellement via les scripts `/home/*.sh` (le `WORKDIR` est `/home`).
 
 ### Network
 
@@ -45,8 +48,8 @@
 - Copie les binaires depuis le builder
 - Installe les packages Python (pandas, matplotlib, happybase, thriftpy2)
 - Configure SSH (clés hôte + utilisateur, authorized_keys)
-- Copie les fichiers de configuration et scripts
-- Configure les heaps JVM
+- Copie l'entrypoint, les scripts master et regionservers
+- Toute la configuration (XML, heaps JVM) est générée à chaud par `entrypoint.sh`
 
 ### Versions
 
@@ -158,49 +161,74 @@ yarn.nodemanager.vmem-check-enabled = false
 
 ## Startup sequence
 
-### bootstrap.sh — logique détaillée
+### entrypoint.sh — logique détaillée
+
+L'`entrypoint.sh` centralise toute l'initialisation ET la génération des fichiers
+de configuration (plus besoin de fichiers statiques dans `config/`).
+Aucun service Hadoop/HBase n'est démarré automatiquement.
 
 ```
 Master:
   1. Écrit /etc/hosts (3 entrées IP ↔ hostname)
-  2. Démarre SSH
-  3. Charge les variables d'environnement
-  4. Écrit /data/zookeeper/myid = 1
-  5. Démarre ZooKeeper
-  6. Formate NameNode si première exécution (fichier sentinel VERSION)
-  7. Démarre NameNode (port 9000)
-  8. Démarre ResourceManager (port 8088)
-  9. Démarre HistoryServer (port 19888)
-  10. Lance en BACKGROUND la boucle d'attente DataNode → HBase
-  11. Le healthcheck teste le port 9000 → passe
+  2. Démarre SSH (daemon)
+  3. Configure SSH (PermitRootLogin, StrictHostKeyChecking)
+  4. Charge les variables d'environnement (/etc/profile.d/hadoop.sh)
+  5. Configure les heaps JVM (hadoop-env.sh, yarn-env.sh, hbase-env.sh)
+  6. Génère tous les fichiers de configuration (XML, zoo.cfg, spark-defaults, workers)
+  7. Écrit /data/zookeeper/myid = 1
+  8. Formate NameNode si première exécution (fichier sentinel VERSION)
+  9. Boucle infinie (sleep 30) pour maintenir le conteneur en vie
 
 Slave:
   1. Écrit /etc/hosts
-  2. Démarre SSH
-  3. Lance la boucle d'attente du port 9000 master (60 tentatives × 2s)
-  4. Démarre DataNode
-  5. Démarre NodeManager
-  6. Démarre HBase RegionServer
-
-Background (master):
-  a. Boucle : `hdfs dfsadmin -report` → grep "Live datanodes" > 0
-  b. Dès qu'au moins 1 DataNode est détecté → démarre HBase Master, Thrift, REST
-  c. Crée le dossier Spark event log dans HDFS
+  2. Démarre SSH (daemon)
+  3. Configure SSH (PermitRootLogin, StrictHostKeyChecking)
+  4. Charge les variables d'environnement
+  5. Configure les heaps JVM
+  6. Génère tous les fichiers de configuration (identiques au master)
+  7. Boucle infinie (sleep 30) pour maintenir le conteneur en vie
 ```
 
-### Healthcheck
+Après le démarrage des conteneurs, l'utilisateur lance les services manuellement
+depuis le master via les scripts dans `/home/` :
 
-```yaml
-test: ["CMD", "bash", "-c", "echo > /dev/tcp/hadoop-master/9000"]
-start_period: 120s   # Patiente 120s avant le premier test
-interval: 30s        # Test toutes les 30s
-retries: 3           # 3 échecs consécutifs = unhealthy
+```bash
+./start_hadoop.sh   # HDFS (start-dfs.sh) + YARN (start-yarn.sh)
+./start_hbase.sh    # ZooKeeper + HBase + Thrift
+./start_rest.sh     # HBase REST (optionnel)
 ```
 
-Le healthcheck teste la connectivité TCP au port RPC du NameNode (9000).
-Tant que le NameNode n'est pas prêt, le conteneur est "starting".
-Les slaves ont `depends_on: master: condition: service_healthy` et ne démarrent
-que lorsque le master est sain.
+### Scripts de démarrage
+
+**start_hadoop.sh :**
+```
+1. start-dfs.sh       → NameNode (master) + DataNodes (slaves) via SSH
+2. start-yarn.sh      → ResourceManager (master) + NodeManagers (slaves) via SSH
+3. mapred --daemon start historyserver
+4. hdfs dfs -mkdir -p /spark-logs
+```
+
+**start_hbase.sh :**
+```
+1. zkServer.sh start
+2. start-hbase.sh     → HBase Master (master) + RegionServers (slaves) via SSH
+3. hbase-daemon.sh start thrift
+```
+
+**start_rest.sh / stop_rest.sh :**
+```
+hbase-daemon.sh start rest
+hbase-daemon.sh stop rest
+```
+
+### Ordre de démarrage recommandé
+
+1. Démarrer les conteneurs : `./container_start.sh`
+2. Attendre ~10s que SSH soit prêt
+3. Se connecter au master : `./bash_hadoop_master.sh`
+4. `./start_hadoop.sh` — HDFS + YARN (peut prendre 30-60s)
+5. `./start_hbase.sh` — HBase + Thrift
+6. `./start_rest.sh` — REST (si nécessaire)
 
 ### Gestion des signaux
 
@@ -208,8 +236,9 @@ que lorsque le master est sain.
 trap cleanup SIGTERM SIGINT
 ```
 
-`cleanup()` arrête proprement tous les services dans l'ordre inverse du démarrage
-quand Docker envoie SIGTERM (docker compose down, docker stop).
+`cleanup()` dans `entrypoint.sh` fait un `exit 0` — les services doivent être
+arrêtés manuellement avant l'arrêt du conteneur via `./stop_hadoop.sh` et
+`./stop_hbase.sh`.
 
 ---
 
@@ -236,38 +265,41 @@ le format est ignoré.
 ### Dépendances inter-conteneurs
 
 ```
-master (healthy: port 9000 open)
-  ├── slave1 (depends_on: service_healthy)
-  └── slave2 (depends_on: service_healthy)
+master (démarrage simple)
+  ├── slave1 (depends_on: master)
+  └── slave2 (depends_on: master)
 ```
 
-Les slaves attendent le master. HBase sur le master attend les slaves
-(boucle en background). Pas de deadlock possible.
+Les slaves attendent juste que le master ait démarré (pas de healthcheck).
+Les dépendances réelles (HDFS, YARN, HBase) sont gérées par les scripts
+`start-dfs.sh`, `start-yarn.sh` et `start-hbase.sh` qui utilisent SSH
+pour orchestrer le démarrage à distance sur les slaves.
 
 ---
 
 ## Résolution de problèmes
 
-### Symptôme : master reste "unhealthy"
+### Symptôme : les conteneurs sont "cold" (aucun service)
 
-Vérifier que le port 9000 est accessible :
+C'est normal. Les services se lancent manuellement :
 ```bash
-docker exec hadoop-cluster-master-1 sh -c 'echo > /dev/tcp/hadoop-master/9000 && echo OK'
+docker exec -it hadoop-master bash
+./start_hadoop.sh
+./start_hbase.sh
 ```
 
 ### Symptôme : HBase ne démarre pas
 
 Vérifier que les DataNodes sont connectés :
 ```bash
-docker exec hadoop-cluster-master-1 hdfs dfsadmin -report | grep "Live datanodes"
+docker exec hadoop-master hdfs dfsadmin -report | grep "Live datanodes"
 ```
 
 ### Symptôme : "No datanode" dans HBase
 
-HBase attend les DataNodes en background (jusqu'à 5 minutes max). Vérifier les logs :
-```bash
-docker compose logs master | grep -A2 "Waiting for"
-```
+Vérifier que `start_hadoop.sh` a eu le temps de finir (30-60s) avant de
+lancer `start_hbase.sh`. Les DataNodes doivent être actifs pour qu'HBase
+puisse écrire dans HDFS.
 
 ### Rebuild complet
 
@@ -288,9 +320,9 @@ Vérifier le firewall Proxmox et le pare-feu Windows. Ports à ouvrir :
 
 ### Modifier les heaps
 
-Dans `Dockerfile.rocky`, ligne RUN avec les opts :
-```dockerfile
-RUN echo "export HADOOP_NAMENODE_OPTS=\"-Xms1g -Xmx1g\"" >> ...
+Dans `scripts/entrypoint.sh`, fonction `setup_hadoop_heaps()` :
+```bash
+export HDFS_NAMENODE_OPTS="-Xms1g -Xmx1g"
 ```
 
 ### Ajouter un service
@@ -298,7 +330,8 @@ RUN echo "export HADOOP_NAMENODE_OPTS=\"-Xms1g -Xmx1g\"" >> ...
 Exemple : ajouter un datawarehouse ou un outil de monitoring.
 1. Ajouter le service dans `docker-compose.yml`
 2. Ajouter l'installation dans `Dockerfile.rocky` (stage 2)
-3. Ajouter le démarrage dans `bootstrap.sh`
+3. Ajouter sa configuration dans `scripts/entrypoint.sh`
+4. Créer un script de démarrage dans `scripts/master/`
 
 ### Changer les versions
 
