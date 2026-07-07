@@ -11,7 +11,6 @@ Stack Hadoop complète pour l'apprentissage, déployable en local ou sur Proxmox
 | Hadoop | 3.3.6 | [dlcdn.apache.org](https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz) |
 | HBase | 2.5.15 | [dlcdn.apache.org](https://dlcdn.apache.org/hbase/2.5.15/hbase-2.5.15-hadoop3-bin.tar.gz) |
 | ZooKeeper | 3.8.6 | [dlcdn.apache.org](https://dlcdn.apache.org/zookeeper/zookeeper-3.8.6/apache-zookeeper-3.8.6-bin.tar.gz) |
-| Spark | 3.5.8 | [dlcdn.apache.org](https://dlcdn.apache.org/spark/spark-3.5.8/spark-3.5.8-bin-hadoop3-scala2.13.tgz) |
 | Python | 3.11 | pip : pandas, matplotlib, happybase, thriftpy2 |
 
 ## Prérequis
@@ -122,12 +121,6 @@ python3 /home/src/hbase.py
 2. URL : `http://<IP_PROXMOX>:9091/`
 3. Utiliser l'éditeur Power Query pour parser le JSON
 
-### Spark (mode YARN)
-
-```bash
-spark-submit --master yarn --deploy-mode cluster /path/to/script.py
-```
-
 ## Arrêt et nettoyage
 
 ```bash
@@ -163,14 +156,13 @@ hadoop-cluster/
 │   ├── yarn-site.xml
 │   ├── hbase-site.xml
 │   ├── zoo.cfg
-│   ├── spark-defaults.conf
 │   └── workers
 ├── scripts/                  # Scripts copiés dans le conteneur
 │   ├── entrypoint.sh          # Entrypoint (init + heaps JVM)
 │   ├── regionservers          # Liste des RegionServers HBase
 │   └── master/                # Scripts de gestion des services (dans /home/)
-│       ├── start_hadoop.sh
-│       ├── stop_hadoop.sh
+│       ├── start-dfs.sh
+│       ├── start-yarn.sh
 │       ├── start_hbase.sh
 │       ├── stop_hbase.sh
 │       ├── start_rest.sh

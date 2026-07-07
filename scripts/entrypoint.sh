@@ -11,6 +11,8 @@ HBASE_CONF_DIR=$HBASE_HOME/conf
 
 export HADOOP_HOME HBASE_HOME ZK_HOME HADOOP_CONF_DIR HBASE_CONF_DIR
 export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin
+export ZK_SERVER_HEAP=${ZK_SERVER_HEAP:-128}
+export SERVER_JVMFLAGS="-Xms${ZK_SERVER_HEAP}m -Xmx${ZK_SERVER_HEAP}m"
 
 # ── System ────────────────────────────────────────────────────
 
@@ -36,10 +38,9 @@ export JAVA_HOME=$JAVA_HOME
 export HADOOP_HOME=$HADOOP_HOME
 export HBASE_HOME=$HBASE_HOME
 export ZK_HOME=$ZK_HOME
-export SPARK_HOME=$SPARK_HOME
 export HADOOP_CONF_DIR=$HADOOP_CONF_DIR
 export HBASE_CONF_DIR=$HBASE_CONF_DIR
-export PATH=\$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin:$SPARK_HOME/bin
+export PATH=\$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin
 EOF
     chmod +x /etc/profile.d/hadoop.sh
 }
@@ -61,22 +62,26 @@ setup_hadoop_heaps() {
 export JAVA_HOME=$JAVA_HOME
 export HADOOP_HOME=$HADOOP_HOME
 export HADOOP_CONF_DIR=$HADOOP_CONF_DIR
-export HADOOP_HEAPSIZE=512
-export HDFS_NAMENODE_OPTS="-Xms512m -Xmx512m"
-export HDFS_DATANODE_OPTS="-Xms256m -Xmx256m"
+export HADOOP_HEAPSIZE=192
+export HADOOP_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED -XX:MaxMetaspaceSize=64m -Xss512k"
+export HDFS_NAMENODE_OPTS="-Xms192m -Xmx192m"
+export HDFS_DATANODE_OPTS="-Xms128m -Xmx128m"
+export HDFS_SECONDARYNAMENODE_OPTS="-Xms192m -Xmx192m"
 EOF
 
     cat >> $HADOOP_CONF_DIR/yarn-env.sh <<-EOF
-export YARN_RESOURCEMANAGER_OPTS="-Xms512m -Xmx512m"
-export YARN_NODEMANAGER_OPTS="-Xms256m -Xmx256m"
-export YARN_HEAPSIZE=512
+export YARN_RESOURCEMANAGER_OPTS="-Xms192m -Xmx192m"
+export YARN_NODEMANAGER_OPTS="-Xms128m -Xmx128m"
+export YARN_HEAPSIZE=192
 EOF
 
     cat >> $HBASE_CONF_DIR/hbase-env.sh <<-EOF
-export HBASE_HEAPSIZE=512
-export HBASE_MASTER_OPTS="-Xms512m -Xmx512m"
-export HBASE_REGIONSERVER_OPTS="-Xms512m -Xmx512m"
-export HBASE_THRIFT_OPTS="-Xms256m -Xmx256m"
+export JAVA_HOME=$JAVA_HOME
+export HBASE_HEAPSIZE=192
+export HBASE_MASTER_OPTS="-Xms192m -Xmx192m"
+export HBASE_REGIONSERVER_OPTS="-Xms192m -Xmx192m"
+export HBASE_THRIFT_OPTS="-Xms128m -Xmx128m"
+export HBASE_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -XX:MaxMetaspaceSize=96m -Xss512k"
 EOF
 }
 

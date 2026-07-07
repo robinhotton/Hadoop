@@ -1,10 +1,10 @@
 # Stage 1: download and extract binaries
-FROM rockylinux:9 AS builder
+FROM alpine:3.20 AS builder
 
 ARG HADOOP_VERSION=3.3.6
 ARG HBASE_VERSION=2.5.15
 ARG ZK_VERSION=3.8.6
-RUN dnf install -y --allowerasing curl && rm -rf /var/cache/dnf
+RUN apk add --no-cache curl
 
 RUN curl -fsSL https://dlcdn.apache.org/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz \
     | tar xz -C /opt && mv /opt/hadoop-$HADOOP_VERSION /opt/hadoop
@@ -22,12 +22,12 @@ RUN rm -rf \
   && find /opt \( -name "*.bat" -o -name "*.cmd" -o -name "*.ps1" -o -name "*.a" \) -delete
 
 # Stage 2: runtime image
-FROM rockylinux:9
+FROM debian:bookworm-slim
 
 LABEL description="Hadoop 3.3.6 + HBase 2.5.15 + ZooKeeper 3.8.6 - Learning Cluster"
 LABEL maintainer="Hadoop Docker Learning"
 
-ENV JAVA_HOME=/usr/lib/jvm/jre-11-openjdk
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV HADOOP_HOME=/opt/hadoop
 ENV HBASE_HOME=/opt/hbase
 ENV ZK_HOME=/opt/zookeeper
@@ -40,25 +40,19 @@ ENV YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
 ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin
 
-RUN dnf install -y --allowerasing \
-        java-11-openjdk-headless java-11-openjdk-devel \
-        openssh-server openssh-clients \
-        nmap-ncat nano \
-        which \
-    && dnf install -y epel-release \
-    && dnf install -y python3.11 python3.11-pip \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
-    && ln -sf /usr/bin/pip3.11 /usr/bin/pip3 \
-    && dnf clean all && rm -rf /var/cache/dnf
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        openjdk-17-jdk-headless \
+        openssh-server openssh-client \
+        netcat-openbsd nano \
+        python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
         pandas matplotlib happybase thriftpy2
 
 RUN ssh-keygen -t rsa -P '' -f /root/.ssh/id_rsa && \
     cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys && \
-    chmod 600 /root/.ssh/authorized_keys && \
-    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N '' 2>/dev/null && \
-    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N '' 2>/dev/null
+    chmod 600 /root/.ssh/authorized_keys
 
 COPY --from=builder /opt/hadoop $HADOOP_HOME
 COPY --from=builder /opt/hbase $HBASE_HOME

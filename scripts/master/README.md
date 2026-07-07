@@ -7,8 +7,9 @@ Chaque script démarre un service indépendant. L'ordre ci-dessous respecte les 
 | 1 | `start-zookeeper.sh` | **ZooKeeper** — coordination distribuée | Aucune |
 | 2 | `start-dfs.sh` | **HDFS** — stockage distribué (NameNode + Datanodes) | Aucune |
 | 3 | `start-yarn.sh` | **YARN** — ordonnanceur de ressources (ResourceManager + NodeManagers) | HDFS |
-| 4 | `start-hbase.sh` | **HBase** — base NoSQL (Master + RegionServers) | HDFS + ZooKeeper |
-| 5 | `start-thrift.sh` | **HBase Thrift** — passerelle Thrift pour HBase | HBase |
-| 6 | `start-rest.sh` | **HBase REST** — API REST pour HBase | HBase |
+| 4 | `start-jobhistory.sh` | **MapReduce JobHistory** — historique des jobs MR | YARN + HDFS |
+| 5 | `start-hbase.sh` | **HBase** — base NoSQL (Master + RegionServers) | HDFS + ZooKeeper |
+| 6 | `start-thrift.sh` | **HBase Thrift** — passerelle Thrift pour HBase | HBase |
+| 7 | `start-rest.sh` | **HBase REST** — API REST pour HBase | HBase |
 
 > Les services se stoppent avec `docker compose down`.

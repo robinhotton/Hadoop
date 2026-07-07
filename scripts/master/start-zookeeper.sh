@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export ZK_SERVER_HEAP=${ZK_SERVER_HEAP:-128}
+
 echo "[INFO] Starting ZooKeeper..."
 $ZK_HOME/bin/zkServer.sh start >/dev/null 2>&1
 sleep 2
