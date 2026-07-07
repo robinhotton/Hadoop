@@ -36,7 +36,6 @@ services:
     depends_on:
       master:
         condition: service_started
-    restart: on-failure
     networks:
       hadoop-net:
         ipv4_address: 172.20.0.20
@@ -54,7 +53,6 @@ services:
     depends_on:
       master:
         condition: service_started
-    restart: on-failure
     networks:
       hadoop-net:
         ipv4_address: 172.20.0.30
