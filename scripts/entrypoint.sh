@@ -6,12 +6,11 @@ ROLE=${ROLE:-slave}
 HADOOP_HOME=${HADOOP_HOME:-/opt/hadoop}
 HBASE_HOME=${HBASE_HOME:-/opt/hbase}
 ZK_HOME=${ZK_HOME:-/opt/zookeeper}
-SPARK_HOME=${SPARK_HOME:-/opt/spark}
 HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 HBASE_CONF_DIR=$HBASE_HOME/conf
 
-export HADOOP_HOME HBASE_HOME ZK_HOME SPARK_HOME HADOOP_CONF_DIR HBASE_CONF_DIR
-export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin:$SPARK_HOME/bin
+export HADOOP_HOME HBASE_HOME ZK_HOME HADOOP_CONF_DIR HBASE_CONF_DIR
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$ZK_HOME/bin
 
 # ── System ────────────────────────────────────────────────────
 

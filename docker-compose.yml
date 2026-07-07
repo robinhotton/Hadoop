@@ -17,6 +17,7 @@ services:
       - "9091:9091"
     volumes:
       - ./src:/home/src
+      - ./scripts/master/:/home/
     environment:
       - ROLE=master
     networks:

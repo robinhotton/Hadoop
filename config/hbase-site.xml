@@ -38,6 +38,10 @@
         <value>16030</value>
     </property>
     <property>
+        <name>hbase.rest.port</name>
+        <value>9091</value>
+    </property>
+    <property>
         <name>hbase.regionserver.handler.count</name>
         <value>3</value>
     </property>

@@ -95,15 +95,18 @@ Pour arrêter les services :
 
 ### URLs utiles
 
-| URL | Description |
-|-----|-------------|
-| `http://<IP>:9870` | NameNode UI |
-| `http://<IP>:8088` | YARN ResourceManager UI |
-| `http://<IP>:8040` | NodeManager UI (master) |
-| `http://<IP>:8041` | NodeManager UI (slave1) |
-| `http://<IP>:8042` | NodeManager UI (slave2) |
-| `http://<IP>:16010` | HBase Master UI |
-| `http://<IP>:9091` | HBase REST API |
+| URL | Port | Service | Description |
+|-----|------|---------|-------------|
+| `http://<IP>:9870` | `9870` | NameNode | Interface web HDFS (métadonnées, blocs, datanodes) |
+| `http://<IP>:9868` | `9868` | SecondaryNameNode | Statut du checkpointing |
+| `http://<IP>:8088` | `8088` | ResourceManager | Interface web YARN (jobs, scheduler, nodes) |
+| `http://<IP>:8041` | `8041` | NodeManager slave1 | Logs et statut du nœud d'exécution YARN slave1 |
+| `http://<IP>:8042` | `8042` | NodeManager slave2 | Logs et statut du nœud d'exécution YARN slave2 |
+| `http://<IP>:16010` | `16010` | HMaster | Interface web HBase (tables, regions, masters) |
+| `http://<IP>:9091` | `9091` | HBase REST | API REST HBase (requêtes HTTP JSON/XML) |
+
+> Le master n'a pas de NodeManager (il ne figure pas dans `workers`).
+> Les ports 2181 (ZooKeeper), 9000 (NameNode RPC) et 9090 (Thrift) sont des protocoles binaires, pas des interfaces web.
 
 ## Utilisation
 
