@@ -1,13 +1,13 @@
 # Hadoop Learning Cluster
 
-Stack Hadoop complète pour l'apprentissage, déployable en local ou sur Proxmox.
+Stack Hadoop complète pour l'apprentissage, déployable en local ou sur VM.
 
 ## Versions
 
 | Composant | Version | URL de téléchargement |
 |-----------|---------|----------------------|
-| OS | Rocky Linux 9 | `rockylinux:9` (Docker Hub) |
-| Java | OpenJDK 11.0.25 | `java-11-openjdk-headless` |
+| OS | Debian 12 (bookworm) | `debian:bookworm-slim` (Docker Hub) |
+| Java | OpenJDK 17.0.14 | `java-17-openjdk-jdk-headless` |
 | Hadoop | 3.3.6 | [dlcdn.apache.org](https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz) |
 | HBase | 2.5.15 | [dlcdn.apache.org](https://dlcdn.apache.org/hbase/2.5.15/hbase-2.5.15-hadoop3-bin.tar.gz) |
 | ZooKeeper | 3.8.6 | [dlcdn.apache.org](https://dlcdn.apache.org/zookeeper/zookeeper-3.8.6/apache-zookeeper-3.8.6-bin.tar.gz) |
@@ -16,7 +16,7 @@ Stack Hadoop complète pour l'apprentissage, déployable en local ou sur Proxmox
 ## Prérequis
 
 - Docker Engine 24+ et Docker Compose v2+
-- 6-8 GB RAM recommandés
+- 4+ GB RAM recommandés
 
 ## Quick start
 
@@ -41,30 +41,44 @@ Vous devez lancer les services manuellement depuis le master.
 ./bash_hadoop_master.sh
 # ou : docker exec -it hadoop-master bash
 
-# 2. Lancer HDFS et YARN
-./start_hadoop.sh
+# 2. Tout en un (ZooKeeper → HDFS → YARN → History → HBase → Thrift → REST)
+./start-all.sh
 
-# 3. Lancer HBase et Thrift
-./start_hbase.sh
+# Ou étape par étape :
+./start-zookeeper.sh    # ZooKeeper (coordination)
+./start-dfs.sh          # HDFS (NameNode + DataNodes)
+./start-yarn.sh         # YARN (ResourceManager + NodeManagers)
+./start-jobhistory.sh   # MapReduce JobHistory (optionnel)
+./start-hbase.sh        # HBase (Master + RegionServers)
+./start-thrift.sh       # HBase Thrift API (optionnel)
+./start-rest.sh         # HBase REST API (optionnel)
 
-# 4. (optionnel) Lancer l'API REST HBase
-./start_rest.sh
-
-# 5. Vérifier les processus
+# 3. Vérifier les processus
 jps
 
-# 6. Lancer un MapReduce wordcount
+# 4. Lancer un MapReduce wordcount
 cd /home/src/wordcount
-echo "hello world hello hadoop hello yarn hello hbase" > data.txt
-./run_mr.sh data.txt wordcount_mapper.py wordcount_reducer.py wordcount
+./run_mr.sh data.txt mapper.py reducer.py wordcount
 ```
 
-Pour arrêter les services :
+Pour arrêter les services, depuis le master :
 
 ```bash
-./stop_rest.sh
-./stop_hbase.sh
-./stop_hadoop.sh
+# Arrêter tous les services Java
+pkill -f 'hbase' 2>/dev/null;
+pkill -f 'zookeeper' 2>/dev/null
+pkill -f 'ResourceManager' 2>/dev/null;
+pkill -f 'NodeManager' 2>/dev/null
+pkill -f 'NameNode' 2>/dev/null;
+pkill -f 'DataNode' 2>/dev/null
+pkill -f 'SecondaryNameNode' 2>/dev/null;
+pkill -f 'historyserver' 2>/dev/null
+```
+
+Puis arrêter les conteneurs depuis l'hôte :
+
+```bash
+docker compose down
 ```
 
 ## Services
@@ -99,13 +113,13 @@ Pour arrêter les services :
 | `http://<IP>:9870` | `9870` | NameNode | Interface web HDFS (métadonnées, blocs, datanodes) |
 | `http://<IP>:9868` | `9868` | SecondaryNameNode | Statut du checkpointing |
 | `http://<IP>:8088` | `8088` | ResourceManager | Interface web YARN (jobs, scheduler, nodes) |
-| `http://<IP>:8041` | `8041` | NodeManager slave1 | Logs et statut du nœud d'exécution YARN slave1 |
+| `http://<IP>:8041` | `8041` *(→8042 interne)* | NodeManager slave1 | Logs et statut du nœud d'exécution YARN slave1 |
 | `http://<IP>:8042` | `8042` | NodeManager slave2 | Logs et statut du nœud d'exécution YARN slave2 |
 | `http://<IP>:16010` | `16010` | HMaster | Interface web HBase (tables, regions, masters) |
 | `http://<IP>:9091` | `9091` | HBase REST | API REST HBase (requêtes HTTP JSON/XML) |
 
 > Le master n'a pas de NodeManager (il ne figure pas dans `workers`).
-> Les ports 2181 (ZooKeeper), 9000 (NameNode RPC) et 9090 (Thrift) sont des protocoles binaires, pas des interfaces web.
+> Les ports 2181 (ZooKeeper), 9000 (NameNode RPC), 9090 (Thrift) sont des protocoles binaires, pas des interfaces web.
 
 ## Utilisation
 
@@ -121,61 +135,62 @@ python3 /home/src/hbase.py
 2. URL : `http://<IP_PROXMOX>:9091/`
 3. Utiliser l'éditeur Power Query pour parser le JSON
 
-## Arrêt et nettoyage
+> Amélioration par la suite pour utiliser un 'Hbase ODBC driver'
+
+## Déploiement sur VM
+
+Guide complet pour l'installation sur VM Proxmox → [`docs/deploiement-vm.md`](docs/deploiement-vm.md)
+
+## Rebuild complet
 
 ```bash
-# Arrêter les conteneurs
-./container_stop.sh
-# ou : docker compose down
-
-# Rebuild complet
+# -v : supprime aussi les volumes
+docker compose down -v
 docker compose build --no-cache
+docker compose up -d
 ```
-
-## Déploiement sur Proxmox
-
-1. Installer Docker sur la VM Proxmox
-2. Copier le dossier `hadoop-cluster/` sur la VM
-3. Lancer `docker compose up -d`
-4. Ouvrir les ports dans le firewall Proxmox (9870, 8088, 9090, 9091, ...)
-5. Distribuer l'URL `http://<IP_VM>:9870` aux apprenants
 
 ## Arborescence
 
 ```
 hadoop-cluster/
-├── Dockerfile.rocky          # Image multistage
+├── Dockerfile.debian         # Image multistage (Debian 12) — actif
+├── Dockerfile.rocky          # Image multistage (Rocky Linux 9) — conservé
 ├── docker-compose.yml        # Orchestration
 ├── container_start.sh        # Démarre les conteneurs
 ├── container_stop.sh         # Arrête les conteneurs
 ├── bash_hadoop_master.sh     # Console dans le master
-├── config/                   # Fichiers de configuration
+├── config/                   # Fichiers de configuration statiques
 │   ├── core-site.xml
 │   ├── hdfs-site.xml
 │   ├── mapred-site.xml
 │   ├── yarn-site.xml
 │   ├── hbase-site.xml
 │   ├── zoo.cfg
-│   └── workers
+│   └── datanodes
 ├── scripts/                  # Scripts copiés dans le conteneur
-│   ├── entrypoint.sh          # Entrypoint (init + heaps JVM)
-│   ├── regionservers          # Liste des RegionServers HBase
+│   ├── entrypoint.sh          # Entrypoint (init réseau + heaps JVM)
 │   └── master/                # Scripts de gestion des services (dans /home/)
+│       ├── start-all.sh       # Démarre tous les services en ordre
+│       ├── start-zookeeper.sh
 │       ├── start-dfs.sh
 │       ├── start-yarn.sh
-│       ├── start_hbase.sh
-│       ├── stop_hbase.sh
-│       ├── start_rest.sh
-│       └── stop_rest.sh
+│       ├── start-jobhistory.sh
+│       ├── start-hbase.sh
+│       ├── start-thrift.sh
+│       ├── start-rest.sh
+│       └── README.md
 ├── src/                     # Scripts des TP
 │   ├── hbase.py              # Exemple HBase (étudiants)
 │   ├── wordcount/
-│   │   ├── wordcount_mapper.py
-│   │   ├── wordcount_reducer.py
-│   │   ├── store_in_hbase.py  # Stocke le résultat MR dans HBase
+│   │   ├── mapper.py
+│   │   ├── reducer.py
+│   │   ├── put_hbase.py       # Stocke le résultat MR dans HBase
 │   │   └── run_mr.sh         # Script générique de lancement MR
 │   └── tp_hbase.py
 ├── docs/                   # Documentation
-│   ├── ha-failover.md
-│   └── technical-implementation.md
+│   ├── technical-implementation.md
+│   ├── rest-api.md
+│   ├── amelioration-prod.md
+│   └── deploiement-vm.md
 ```

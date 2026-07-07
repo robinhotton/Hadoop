@@ -12,4 +12,7 @@ Chaque script démarre un service indépendant. L'ordre ci-dessous respecte les 
 | 6 | `start-thrift.sh` | **HBase Thrift** — passerelle Thrift pour HBase | HBase |
 | 7 | `start-rest.sh` | **HBase REST** — API REST pour HBase | HBase |
 
-> Les services se stoppent avec `docker compose down`.
+> Utilisez `start-all.sh` pour tout lancer en une commande.
+>
+> Pour arrêter les services, utilisez `pkill -f <service>` depuis le master,
+> puis `docker compose down` sur l'hôte.
