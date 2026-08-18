@@ -85,6 +85,18 @@ export HBASE_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.
 EOF
 }
 
+# ── Permissions ────────────────────────────────────────────────
+# Les bind mounts (./scripts/master → /home, ./src → /home/src) propagent
+# le mode des fichiers du host. Sous Windows, Git stocke les .sh en 644
+# (sans bit x), donc les scripts montés ne sont pas exécutables dans le
+# conteneur. On force le bit x ici, après montage, à chaque démarrage.
+
+fix_permissions() {
+    chmod +x /home/*.sh 2>/dev/null
+    chmod +x /home/src/wordcount/*.sh 2>/dev/null
+    chmod +x /opt/scripts/entrypoint.sh 2>/dev/null
+}
+
 # ── Cleanup ───────────────────────────────────────────────────
 
 cleanup() {
@@ -101,6 +113,7 @@ start_ssh
 setup_ssh_config
 setup_hadoop_profile
 setup_hadoop_heaps
+fix_permissions
 
 if [ "$ROLE" = "master" ]; then
     echo "[INFO] Initializing ZooKeeper myid..."
