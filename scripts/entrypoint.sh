@@ -92,9 +92,9 @@ EOF
 # conteneur. On force le bit x ici, après montage, à chaque démarrage.
 
 fix_permissions() {
-    chmod +x /home/*.sh 2>/dev/null
-    chmod +x /home/src/wordcount/*.sh 2>/dev/null
-    chmod +x /opt/scripts/entrypoint.sh 2>/dev/null
+    chmod 744 /home/*.sh 2>/dev/null
+    chmod 744 /home/src/wordcount/*.sh 2>/dev/null
+    chmod 744 /opt/scripts/entrypoint.sh 2>/dev/null
 }
 
 # ── Cleanup ───────────────────────────────────────────────────
