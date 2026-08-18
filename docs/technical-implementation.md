@@ -6,16 +6,16 @@
 
 | Hostname | Role | Services (après démarrage manuel) |
 |----------|------|-----------------------------------|
-| `hadoop-master` (172.20.0.10) | Master | NameNode, ResourceManager, SecondaryNameNode, ZooKeeper, HBase Master, HBase Thrift, HBase REST, HistoryServer |
-| `hadoop-slave1` (172.20.0.20) | Slave | DataNode, NodeManager, HBase RegionServer |
-| `hadoop-slave2` (172.20.0.30) | Slave | DataNode, NodeManager, HBase RegionServer |
+| `hadoop-master` (172.30.0.10) | Master | NameNode, ResourceManager, SecondaryNameNode, ZooKeeper, HBase Master, HBase Thrift, HBase REST, HistoryServer |
+| `hadoop-slave1` (172.30.0.20) | Slave | DataNode, NodeManager, HBase RegionServer |
+| `hadoop-slave2` (172.30.0.30) | Slave | DataNode, NodeManager, HBase RegionServer |
 
 **Note :** Les conteneurs démarrent sans aucun service actif (SSH uniquement).
 Les services se lancent manuellement via les scripts `/home/*.sh` (le `WORKDIR` est `/home`).
 
 ### Network
 
-- Bridge Docker `hadoop-net` — subnet `172.20.0.0/16`
+- Bridge Docker `hadoop-net` — subnet `172.30.0.0/16`
 - IP fixes attribuées statiquement dans `docker-compose.yml`
 - Résolution DNS via `/etc/hosts` écrit par `entrypoint.sh`
 

@@ -19,9 +19,9 @@ export SERVER_JVMFLAGS="-Xms${ZK_SERVER_HEAP}m -Xmx${ZK_SERVER_HEAP}m"
 setup_hosts() {
     cat > /etc/hosts <<-EOF
 127.0.0.1  localhost
-172.20.0.10 hadoop-master
-172.20.0.20 hadoop-slave1
-172.20.0.30 hadoop-slave2
+172.30.0.10 hadoop-master
+172.30.0.20 hadoop-slave1
+172.30.0.30 hadoop-slave2
 EOF
 }
 
